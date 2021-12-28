@@ -9,12 +9,12 @@ pragma solidity >=0.7.0 <0.9.0;
 contract Fabrication {
 
     uint256 public units;
-    address owner;
+    address payable owner;
     address[] admins;
     uint256 public timeOfLastFabricationOrder;
 
     constructor(uint256 initialUnits) {
-        owner = msg.sender;
+        owner = payable(msg.sender);
         units = initialUnits;
         timeOfLastFabricationOrder = block.timestamp;
     }
@@ -36,6 +36,10 @@ contract Fabrication {
         _;
     }
 
+    function balance() public view returns (uint256) {
+        return address(this).balance;
+    }
+
     function addAdmin(address newAdmin) isOwner public {
         admins.push(newAdmin);
     }
@@ -46,7 +50,17 @@ contract Fabrication {
         timeOfLastFabricationOrder = block.timestamp;
     }
 
-    function getUnits() public view returns (uint256){
-        return units;
+    function increaseUnits(uint256 increase) payable public {
+        // 0.01 ether per unit
+        // 1 wei = 10^-18
+        require(msg.value >= increase * 0.01 ether, "Not enough ether");
+        units = units + increase;
+    }
+
+    function withdraw() public {
+        owner.transfer(balance());
+    }
+
+    receive() external payable {
     }
 }
